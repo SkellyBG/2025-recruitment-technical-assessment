@@ -4,7 +4,7 @@ import { z } from "zod";
 const recipeSchema = z.object({
   type: z.literal("recipe"),
   name: z.string(),
-  requiredItem: z.array(
+  requiredItems: z.array(
     z.object({ name: z.string(), quantity: z.number().gte(0) })
   ),
 });
@@ -32,14 +32,14 @@ const app = express();
 app.use(express.json());
 
 type Cookbook = {
-  recipe: Array<Recipe>;
-  ingredient: Array<Ingredient>;
+  recipes: Array<Recipe>;
+  ingredients: Array<Ingredient>;
 };
 
 // Store your recipes here!
 const cookbook: Cookbook = {
-  recipe: [] as const,
-  ingredient: [] as const,
+  recipes: [] as const,
+  ingredients: [] as const,
 };
 
 // Task 1 helper (don't touch)
@@ -86,14 +86,50 @@ app.post("/entry", (req: Request, res: Response) => {
   const parsedInput = cookbookEntrySchema.safeParse(req.body);
 
   if (!parsedInput.success) {
-    res.status(400).send("Validation error");
+    res
+      .status(400)
+      .send(`Improperly formatted payload: ${parsedInput.error.message}`);
     return;
   }
 
-  const cookbookEntry = parsedInput.data;
+  const cookbookEntry: CookbookEntry = parsedInput.data;
 
-  // TODO: implement me
-  res.status(500).send("not yet implemented!");
+  if (
+    cookbook.ingredients.some(
+      (ingredient) => ingredient.name === cookbookEntry.name
+    ) ||
+    cookbook.recipes.some((recipe) => recipe.name === cookbookEntry.name)
+  ) {
+    res.status(400).send("An existing entry with the same name already exist.");
+    return;
+  }
+
+  if (cookbookEntry.type === "recipe") {
+    const requiredItemNames = cookbookEntry.requiredItems.map(
+      (requiredItem) => requiredItem.name
+    );
+
+    if (new Set(requiredItemNames).size !== requiredItemNames.length) {
+      res
+        .status(400)
+        .send(
+          "Required items cannot have multiple elements with the same name."
+        );
+
+      return;
+    }
+  }
+
+  switch (cookbookEntry.type) {
+    case "recipe":
+      cookbook.recipes.push(cookbookEntry);
+      break;
+    case "ingredient":
+      cookbook.ingredients.push(cookbookEntry);
+      break;
+  }
+
+  res.status(200).send("Cookbook Entry successfully added!");
 });
 
 // [TASK 3] ====================================================================

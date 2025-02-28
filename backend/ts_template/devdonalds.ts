@@ -32,14 +32,14 @@ const app = express();
 app.use(express.json());
 
 type Cookbook = {
-  recipes: Array<Recipe>;
-  ingredients: Array<Ingredient>;
+  recipes: Map<string, Recipe>;
+  ingredients: Map<string, Ingredient>;
 };
 
 // Store your recipes here!
 const cookbook: Cookbook = {
-  recipes: [] as const,
-  ingredients: [] as const,
+  recipes: new Map(),
+  ingredients: new Map(),
 };
 
 // Task 1 helper (don't touch)
@@ -95,10 +95,8 @@ app.post("/entry", (req: Request, res: Response) => {
   const cookbookEntry: CookbookEntry = parsedInput.data;
 
   if (
-    cookbook.ingredients.some(
-      (ingredient) => ingredient.name === cookbookEntry.name
-    ) ||
-    cookbook.recipes.some((recipe) => recipe.name === cookbookEntry.name)
+    cookbook.ingredients.has(cookbookEntry.name) ||
+    cookbook.recipes.has(cookbookEntry.name)
   ) {
     res.status(400).send("An existing entry with the same name already exist.");
     return;
@@ -122,10 +120,10 @@ app.post("/entry", (req: Request, res: Response) => {
 
   switch (cookbookEntry.type) {
     case "recipe":
-      cookbook.recipes.push(cookbookEntry);
+      cookbook.recipes.set(cookbookEntry.name, cookbookEntry);
       break;
     case "ingredient":
-      cookbook.ingredients.push(cookbookEntry);
+      cookbook.ingredients.set(cookbookEntry.name, cookbookEntry);
       break;
   }
 
@@ -135,6 +133,15 @@ app.post("/entry", (req: Request, res: Response) => {
 // [TASK 3] ====================================================================
 // Endpoint that returns a summary of a recipe that corresponds to a query name
 app.get("/summary", (req: Request, res: Request) => {
+  const input: unknown = req.query.name;
+
+  if (typeof input !== "string") {
+    res.status(400).send("Query parameter 'name' must be a string!");
+    return;
+  }
+
+  const recipe = cookbook.recipes.find();
+
   // TODO: implement me
   res.status(500).send("not yet implemented!");
 });

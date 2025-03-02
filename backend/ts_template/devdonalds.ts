@@ -140,11 +140,102 @@ app.get("/summary", (req: Request, res: Request) => {
     return;
   }
 
-  const recipe = cookbook.recipes.find();
+  if (cookbook.ingredients.get(input)) {
+    res.status(400).send("An existing ingredient has the provided name.");
+    return;
+  }
 
-  // TODO: implement me
-  res.status(500).send("not yet implemented!");
+  const recipe = cookbook.recipes.get(input);
+
+  if (!recipe) {
+    res.status(400).send("No recipe with the provided name found.");
+    return;
+  }
+
+  const summary = buildSummary(recipe);
+
+  if (!summary) {
+    res
+      .status(400)
+      .send("The recipe contains recipes or ingredients not in the cookbook.");
+
+    return;
+  }
+  res.status(200).send(summary);
 });
+
+interface Summary {
+  name: string;
+  cookTime: number;
+  ingredients: Array<{ name: string; quantity: number }>;
+}
+
+function buildSummary(recipe: Recipe): Summary | null {
+  const summary: Summary = {
+    name: recipe.name,
+    cookTime: 0,
+    ingredients: [],
+  };
+
+  const recipeIngredients = getRecipeIngredients(recipe);
+
+  if (!recipeIngredients) {
+    return null;
+  }
+
+  for (const [recipeIngredient, quantity] of recipeIngredients) {
+    summary.cookTime += recipeIngredient.cookTime * quantity;
+    summary.ingredients.push({ name: recipeIngredient.name, quantity });
+  }
+
+  return summary;
+}
+
+// Get all of a recipe's ingredients, recursively for any other recipes in the input recipe's requiredItems
+function getRecipeIngredients(recipe: Recipe): Map<Ingredient, number> | null {
+  const ingredients: Map<Ingredient, number> = new Map();
+
+  for (const requiredItem of recipe.requiredItems) {
+    const ingredient = cookbook.ingredients.get(requiredItem.name);
+    if (ingredient) {
+      addToMapEntry(ingredient, requiredItem.quantity, ingredients);
+      continue;
+    }
+
+    const recipe = cookbook.recipes.get(requiredItem.name);
+    if (recipe) {
+      const innerRecipeIngredients = getRecipeIngredients(recipe);
+      if (!innerRecipeIngredients) {
+        return null;
+      }
+
+      for (const [
+        innerIngredient,
+        innerQuantity,
+      ] of innerRecipeIngredients.entries()) {
+        addToMapEntry(
+          innerIngredient,
+          innerQuantity * requiredItem.quantity,
+          ingredients
+        );
+      }
+
+      continue;
+    }
+
+    return null;
+  }
+
+  return ingredients;
+}
+
+function addToMapEntry<T>(
+  entry: T,
+  quantity: number,
+  map: Map<T, number>
+): void {
+  map.set(entry, (map.get(entry) ?? 0) + quantity);
+}
 
 // =============================================================================
 // ==== DO NOT TOUCH ===========================================================

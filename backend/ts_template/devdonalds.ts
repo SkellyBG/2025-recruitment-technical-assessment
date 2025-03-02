@@ -61,7 +61,7 @@ const parse_handwriting = (recipeName: string): string | null => {
   const recipeWords = recipeName
     .replace(/[-_]/g, " ") // replace all hyphens and underscores with whitespace
     .split(/\s+/) // split into individual words for processing
-    .map((word) => word.replace(/[^a-zA-Z\d]/g, "")) // delete all non alphanumerical characters
+    .map((word) => word.replace(/[^a-zA-Z]/g, "")) // delete all non alphabetical characters
     .filter((word) => word.length > 0) // filter all empty words
     .map(
       (word) =>

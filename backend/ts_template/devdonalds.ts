@@ -184,21 +184,24 @@ function buildSummary(recipe: Recipe): Summary | null {
   }
 
   for (const [recipeIngredient, quantity] of recipeIngredients) {
-    summary.cookTime += recipeIngredient.cookTime * quantity;
-    summary.ingredients.push({ name: recipeIngredient.name, quantity });
+    summary.cookTime +=
+      // safety: ingredients should always exist here
+      cookbook.ingredients.get(recipeIngredient)!.cookTime * quantity;
+    summary.ingredients.push({ name: recipeIngredient, quantity });
   }
 
   return summary;
 }
 
 // Get all of a recipe's ingredients, recursively for any other recipes in the input recipe's requiredItems
-function getRecipeIngredients(recipe: Recipe): Map<Ingredient, number> | null {
-  const ingredients: Map<Ingredient, number> = new Map();
+// does not account for possible graph cycle.
+function getRecipeIngredients(recipe: Recipe): Map<string, number> | null {
+  const ingredients: Map<string, number> = new Map();
 
   for (const requiredItem of recipe.requiredItems) {
     const ingredient = cookbook.ingredients.get(requiredItem.name);
     if (ingredient) {
-      addToMapEntry(ingredient, requiredItem.quantity, ingredients);
+      addToMapEntry(requiredItem.name, requiredItem.quantity, ingredients);
       continue;
     }
 

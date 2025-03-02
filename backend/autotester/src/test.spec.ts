@@ -157,5 +157,105 @@ describe("Task 3", () => {
       const resp3 = await getTask3("Skibidi");
       expect(resp3.status).toBe(200);
     });
+
+    it("Work with example case", async () => {
+      await postEntry({
+        type: "recipe",
+        name: "Skibidi Spaghetti2",
+        requiredItems: [
+          {
+            name: "Meatball2",
+            quantity: 3,
+          },
+          {
+            name: "Pasta2",
+            quantity: 1,
+          },
+          {
+            name: "Tomato2",
+            quantity: 2,
+          },
+        ],
+      });
+
+      await postEntry({
+        type: "recipe",
+        name: "Meatball2",
+        requiredItems: [
+          {
+            name: "Beef2",
+            quantity: 2,
+          },
+          {
+            name: "Egg2",
+            quantity: 1,
+          },
+        ],
+      });
+
+      await postEntry({
+        type: "recipe",
+        name: "Pasta2",
+        requiredItems: [
+          {
+            name: "Flour2",
+            quantity: 3,
+          },
+          {
+            name: "Egg2",
+            quantity: 1,
+          },
+        ],
+      });
+
+      await postEntry({
+        type: "ingredient",
+        name: "Beef2",
+        cookTime: 5,
+      });
+
+      await postEntry({
+        type: "ingredient",
+        name: "Egg2",
+        cookTime: 3,
+      });
+
+      await postEntry({
+        type: "ingredient",
+        name: "Flour2",
+        cookTime: 0,
+      });
+
+      await postEntry({
+        type: "ingredient",
+        name: "Tomato2",
+        cookTime: 2,
+      });
+
+      const resp3 = await getTask3("Skibidi Spaghetti2");
+
+      expect(resp3.body).toStrictEqual({
+        name: "Skibidi Spaghetti2",
+        cookTime: 46,
+        ingredients: expect.arrayContaining([
+          {
+            name: "Beef2",
+            quantity: 6,
+          },
+          {
+            name: "Flour2",
+            quantity: 3,
+          },
+          {
+            name: "Egg2",
+            quantity: 4,
+          },
+          {
+            name: "Tomato2",
+            quantity: 2,
+          },
+        ]),
+      });
+    });
   });
 });
